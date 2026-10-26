@@ -17,7 +17,7 @@ test = root / 'fixed/test/issue241.cpp'
 wrapper = out / 'regression.cpp'
 wrapper.write_text('#include <iostream>\n#define main issue241_test_main\n#include "' +
                    test.as_posix() + '"\n#undef main\nint main() { std::cout << "wchar_bytes=" << sizeof(wchar_t) << "\\n"; return issue241_test_main(); }\n')
-includes = [root / 'deps/core/include', root / 'deps/config/include']
+includes = [root / 'deps/core/include', root / 'deps/config/include', root / 'deps/assert/include']
 for label in ['original', 'fixed']:
     source = root / label
     head = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
@@ -38,6 +38,8 @@ for label in ['original', 'fixed']:
         command += ['-I' + str(p) for p in paths] + [str(wrapper), '-o', str(executable)]
     with (out / (label + '-build.log')).open('w') as stream:
         result = subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT)
+    if result.returncode:
+        print((out / (label + '-build.log')).read_text(), flush=True)
     assert result.returncode == 0, (label, 'build failed', result.returncode)
     result = subprocess.run([str(executable)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     (out / (label + '-run.log')).write_text(result.stdout)

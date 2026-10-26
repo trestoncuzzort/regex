@@ -41,6 +41,11 @@ jobs:
           path: deps/config
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
+      - uses: actions/checkout@v4
+        with:
+          repository: boostorg/assert
+          ref: 612d35df55376c6412f0477ed62d4d241f8861b7
+          path: deps/assert
       - name: Install GCC 11
         if: matrix.compiler == 'gcc11'
         run: sudo apt-get update && sudo apt-get install -y g++-11
