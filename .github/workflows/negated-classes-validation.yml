@@ -1,0 +1,57 @@
+name: Negated class standalone validation
+on:
+  push:
+    branches: [validation/negated-classes]
+permissions:
+  contents: read
+jobs:
+  regression:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: gcc11
+          - os: ubuntu-24.04
+            compiler: clang-sanitized
+          - os: macos-14
+            compiler: clang
+          - os: windows-2022
+            compiler: msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: cbb02b2468662258e288758ec4c727b2c0705e5e
+          path: fixed
+      - uses: actions/checkout@v4
+        with:
+          ref: a640597d6e118bf76ca2067b629fa1336f58409a
+          path: original
+      - uses: actions/checkout@v4
+        with:
+          repository: boostorg/core
+          ref: 177a1c61748a61a03aaa1d4ec696f81625e66cff
+          path: deps/core
+      - uses: actions/checkout@v4
+        with:
+          repository: boostorg/config
+          ref: 369d933b53ee985543a81c0329c57c86de121755
+          path: deps/config
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+      - name: Install GCC 11
+        if: matrix.compiler == 'gcc11'
+        run: sudo apt-get update && sudo apt-get install -y g++-11
+      - name: Compare unchanged regression on original and fixed headers
+        env:
+          VALIDATION_COMPILER: ${{ matrix.compiler }}
+        run: python validation/negated-classes.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: negated-classes-${{ matrix.os }}-${{ matrix.compiler }}
+          path: validation-output/
+          if-no-files-found: error
+
